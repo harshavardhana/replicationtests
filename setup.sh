@@ -1,24 +1,31 @@
 #!/bin/bash
 
-docker-compose -f docker/docker-compose-2zones.yml down --remove-orphans
-docker-compose -f docker/docker-compose-1zone.yml down --remove-orphans
-docker stop $(docker ps -a -q) 
-docker rm $(docker ps -a -q)
-docker-compose -f docker/docker-compose-2zones.yml up -d
-docker-compose -f docker/docker-compose-1zone.yml up -d
-
-dstIP=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}'  docker-minioz14-dest)
+# docker-compose -f docker/docker-compose-2zones.yml down --remove-orphans
+# docker-compose -f docker/docker-compose-1zone.yml down --remove-orphans
+# docker stop $(docker ps -a -q) 
+# docker rm $(docker ps -a -q)
+# docker-compose -f docker/docker-compose-2zones.yml up -d
+# docker-compose -f docker/docker-compose-1zone.yml up -d
+# sleep 1m
+# echo "slep...t"
+dstIP=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}'  minioz14)
 echo "dstIP:{$dstIP}"
-srcIP=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}'  docker-minioz21-src)
-echo "srcIP:{$srcIP}"
-echo 'http://{$srcIP}'
-echo 'http://{$dstIP}'
+srcIP=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}'  minioz21)
+SRC_PORT="9000"
+DST_PORT="9000"
+SRC_EP="http://${srcIP}:${SRC_PORT}"
+DST_EP="http://${dstIP}:${DST_PORT}"
+echo "srcIP:${srcIP}"
+echo "http://${SRC_EP}"
+echo "http://${DST_EP}"
 mc alias remove tsource
 mc alias remove tdest
-mc alias set tsource 'http://{$srcIP}' minio minio123
-mc alias set tdest 'http://{$dstIP}' minio minio123
+echo " mc alias set tsource ${SRC_EP} minio minio123"
+mc alias set tsource ${SRC_EP} minio minio123
+echo "mc alias set tdest ${DST_EP} minio minio123"
+mc alias set tdest ${DST_EP} minio minio123
 
-# create buckets with versioning enabled
+# # create buckets with versioning enabled
 mc mb tsource/bucket --l 
 mc mb tdest/bucket --l
 
@@ -48,13 +55,14 @@ cat > repladmin-policy-tsource.json <<EOF
        "s3:GetBucketLocation",
        "s3:GetBucketVersioning"
       ],
-      "Retsource": [
+      "Resource": [
        "arn:aws:s3:::bucket"
       ]
      }
     ]
    }
 EOF
+
 mc admin policy add tsource repladmin-policy ./repladmin-policy-tsource.json
 cat ./repladmin-policy-tsource.json
 
@@ -82,7 +90,7 @@ cat > replpolicy.json <<EOF
     "s3:GetBucketVersioning",
     "s3:GetBucketObjectLockConfiguration"
    ],
-   "Retsource": [
+   "Resource": [
     "arn:aws:s3:::bucket"
    ]
   },
@@ -100,22 +108,32 @@ cat > replpolicy.json <<EOF
     "s3:ReplicateObject",
     "s3:ReplicateDelete"
    ],
-   "Retsource": [
+   "Resource": [
     "arn:aws:s3:::bucket/*"
    ]
   }
  ]
 }
 EOF
+
 mc admin policy add tdest replpolicy ./replpolicy.json
 cat ./replpolicy.json
 
 #assign this replication policy to repluser
 mc admin policy set tdest replpolicy user=repluser
 
-# define remote target for replication from tsource/bucket -> tdest/bucket
-replArn={mc admin bucket remote add repladminAlias/bucket http://repluser:repluser123@localhost:9000/bucket --service replication --region us-east-1 --json} | jq .RemoteARN
+mc alias remove asource
+# mc alias remove rdest
+echo " mc alias set asource ${SRC_EP} repladmin repladmin123"
+mc alias set asource ${SRC_EP} repladmin repladmin123
+# echo "mc alias set rdest ${DST_EP} repluser repluser123"
+# mc alias set rdest ${DST_EP} repluser repluser123
+echo "using admin credentials needed on source for setting up targets with alias asource"
+# define remote target for replication from asource/bucket -> rdest/bucket
+echo "mc admin bucket remote add asource/bucket http://repluser:repluser123@${dstIP}:${DST_PORT}/bucket --service replication --region us-east-1 --json"
+REPL_ARN=$(mc admin bucket remote add asource/bucket http://repluser:repluser123@${dstIP}:${DST_PORT}/bucket --service replication --region us-east-1 --json | jq .RemoteARN |  sed -e 's/^"//' -e 's/"$//')
 
-echo "Now, use this ARN to add replication rules using 'mc replicate add' command"
+echo "Now, use this ARN ${REPL_ARN} to add replication rules using 'mc replicate add' command"
+echo "mc replicate add tsource/bucket --priority 1 --remote-bucket bucket --arn ${REPL_ARN} --replicate delete-marker,delete"
 # use arn returned by above command to create a replication policy on the tsource/bucket with `mc replicate add`
-mc replicate add tsource/bucket --priority 1 --remote-bucket bucket --arn ${replArn} --replicate delete-marker,delete
+mc replicate add tsource/bucket --priority 1 --remote-bucket bucket --arn ${REPL_ARN} --replicate delete-marker,delete

@@ -11,7 +11,7 @@
     "s3:GetBucketVersioning",
     "s3:GetBucketObjectLockConfiguration"
    ],
-   "Retsource": [
+   "Resource": [
     "arn:aws:s3:::bucket"
    ]
   },
@@ -29,7 +29,7 @@
     "s3:ReplicateObject",
     "s3:ReplicateDelete"
    ],
-   "Retsource": [
+   "Resource": [
     "arn:aws:s3:::bucket/*"
    ]
   }

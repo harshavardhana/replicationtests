@@ -1,12 +1,10 @@
 version: '2'
-networks:
-  - minio-replsrc
 # starts 4 docker containers running minio server instances. Each
 # minio server's web interface will be accessible on the host at port
 # 9001 through 9004.
 services:
  minioz21:
-  container_name: docker-minioz21-src
+  container_name: minioz21
   image: kp/minio:0218d1
   restart: always
   volumes:
@@ -16,9 +14,9 @@ services:
   environment:
    MINIO_ACCESS_KEY: minio
    MINIO_SECRET_KEY: minio123
-  command: server http://minioz21{1...4}/data http://minioz21{5...8}/data
+  command: server http://minioz2{1...4}/data http://minioz2{5...8}/data
  minioz22:
-  container_name: docker-minioz22-src
+  container_name: minioz22
   image: kp/minio:0218d1
   restart: always
   volumes:
@@ -28,9 +26,9 @@ services:
   environment:
    MINIO_ACCESS_KEY: minio
    MINIO_SECRET_KEY: minio123
-  command: server http://minioz21{1...4}/data http://minioz21{5...8}/data
+  command: server http://minioz2{1...4}/data http://minioz2{5...8}/data
  minioz23:
-  container_name: docker-minioz23-src
+  container_name: minioz23
   image: kp/minio:0218d1
   volumes:
    - /home/kp/repltest/2zones/data3:/data
@@ -39,10 +37,10 @@ services:
   environment:
    MINIO_ACCESS_KEY: minio
    MINIO_SECRET_KEY: minio123
-  command: server http://minioz21{1...4}/data http://minioz21{5...8}/data
+  command: server http://minioz2{1...4}/data http://minioz2{5...8}/data
   restart: on-failure
  minio4:
-  container_name: docker-minioz24-src
+  container_name: minioz24
   image: kp/minio:0218d1
   volumes:
    - /home/kp/repltest/2zones/data4:/data
@@ -51,10 +49,10 @@ services:
   environment:
    MINIO_ACCESS_KEY: minio
    MINIO_SECRET_KEY: minio123
-  command: server http://minioz21{1...4}/data http://minioz21{5...8}/data
+  command: server http://minioz2{1...4}/data http://minioz2{5...8}/data
   restart: on-failure
  minioz25:
-  container_name: docker-minioz25-src
+  container_name: minioz25
   image: kp/minio:0218d1
   volumes:
    - /home/kp/repltest/2zones/data5:/data
@@ -63,10 +61,10 @@ services:
   environment:
    MINIO_ACCESS_KEY: minio
    MINIO_SECRET_KEY: minio123
-  command: server http://minioz21{1...4}/data http://minioz21{5...8}/data
+  command: server http://minioz2{1...4}/data http://minioz2{5...8}/data
   restart: on-failure
  minioz26:
-  container_name: docker-minioz26-src
+  container_name: minioz26
   image: kp/minio:0218d1
   volumes:
    - /home/kp/repltest/2zones/data6:/data
@@ -75,10 +73,10 @@ services:
   environment:
    MINIO_ACCESS_KEY: minio
    MINIO_SECRET_KEY: minio123
-  command: server http://minioz21{1...4}/data http://minioz21{5...8}/data
+  command: server http://minioz2{1...4}/data http://minioz2{5...8}/data
   restart: on-failure
  minioz27:
-  container_name: docker-minioz27-src
+  container_name: minioz27
   image: kp/minio:0218d1
   volumes:
    - /home/kp/repltest/2zones/data7:/data
@@ -87,10 +85,10 @@ services:
   environment:
    MINIO_ACCESS_KEY: minio
    MINIO_SECRET_KEY: minio123
-  command: server http://minioz21{1...4}/data http://minioz21{5...8}/data
+  command: server http://minioz2{1...4}/data http://minioz2{5...8}/data
   restart: on-failure
  minioz28:
-  container_name: docker-minioz28-src
+  container_name: minioz28
   image: kp/minio:0218d1
   volumes:
    - /home/kp/repltest/2zones/data8:/data
@@ -99,5 +97,5 @@ services:
   environment:
    MINIO_ACCESS_KEY: minio
    MINIO_SECRET_KEY: minio123
-  command: server http://minioz21{1...4}/data http://minioz21{5...8}/data   
+  command: server http://minioz2{1...4}/data http://minioz2{5...8}/data   
   restart: on-failure

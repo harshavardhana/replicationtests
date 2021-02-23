@@ -5,7 +5,7 @@ version: '2'
 # 9001 through 9004.
 services:
  minioz11:
-  container_name: docker-minioz11-dest
+  container_name: minioz11
   image: kp/minio:0218d1
   restart: always
   volumes:
@@ -17,7 +17,7 @@ services:
    MINIO_SECRET_KEY: minio123
   command: server http://minioz1{1...4}/data
  minioz12:
-  container_name: docker-minioz12-dest
+  container_name: minioz12
   image: kp/minio:0218d1
   restart: always
   volumes:
@@ -29,7 +29,7 @@ services:
    MINIO_SECRET_KEY: minio123
   command: server http://minioz1{1...4}/data
  minioz13:
-  container_name: docker-minioz13-dest
+  container_name: minioz13
   image: kp/minio:0218d1
   volumes:
    - /home/kp/repltest/1zone/data3:/data
@@ -41,7 +41,7 @@ services:
   command: server http://minioz1{1...4}/data
   restart: on-failure
  minioz14:
-  container_name: docker-minioz14-dest
+  container_name: minioz14
   image: kp/minio:0218d1
   volumes:
    - /home/kp/repltest/1zone/data4:/data
