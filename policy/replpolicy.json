@@ -1,14 +1,6 @@
 {
-"Version": "2012-10-17",
-"Statement": [
-  {
-    "Action": [
-        "admin:SetBucketTarget",
-        "admin:GetBucketTarget"
-    ],
-    "Effect": "Allow",
-    "Sid": ""
-  },
+ "Version": "2012-10-17",
+ "Statement": [
   {
    "Effect": "Allow",
    "Action": [

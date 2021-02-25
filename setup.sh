@@ -1,13 +1,16 @@
 #!/bin/bash
+# remove old source and dest if any
+sudo rm --recursive --force "/home/kp/repltest/1zone*"
+sudo rm --recursive --force "/home/kp/repltest/2zone*"
 
-# docker-compose -f docker/docker-compose-2zones.yml down --remove-orphans
-# docker-compose -f docker/docker-compose-1zone.yml down --remove-orphans
-# docker stop $(docker ps -a -q) 
-# docker rm $(docker ps -a -q)
-# docker-compose -f docker/docker-compose-2zones.yml up -d
-# docker-compose -f docker/docker-compose-1zone.yml up -d
-# sleep 1m
-# echo "slep...t"
+docker-compose -f docker/docker-compose-2zones.yml down --remove-orphans
+docker-compose -f docker/docker-compose-1zone.yml down --remove-orphans
+docker stop $(docker ps -a -q) 
+docker rm $(docker ps -a -q)
+docker-compose -f docker/docker-compose-2zones.yml up -d
+docker-compose -f docker/docker-compose-1zone.yml up -d
+sleep 1m
+echo "slep...t"
 dstIP=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}'  minioz14)
 echo "dstIP:{$dstIP}"
 srcIP=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}'  minioz21)
@@ -34,7 +37,7 @@ mc mb tdest/bucket --l
 mc admin user add tsource repladmin repladmin123
 
 # create a replication policy for repladmin
-cat > repladmin-policy-tsource.json <<EOF
+cat > ./policy/repladmin-policy-tsource.json <<EOF
 {
     "Version": "2012-10-17",
     "Statement": [
@@ -63,8 +66,8 @@ cat > repladmin-policy-tsource.json <<EOF
    }
 EOF
 
-mc admin policy add tsource repladmin-policy ./repladmin-policy-tsource.json
-cat ./repladmin-policy-tsource.json
+mc admin policy add tsource repladmin-policy ./policy/repladmin-policy-tsource.json
+cat ./policy/repladmin-policy-tsource.json
 
 #assign this replication policy to repladmin
 mc admin policy set tsource repladmin-policy user=repladmin
@@ -76,7 +79,7 @@ mc admin user add tdest repluser repluser123
 # create a replication policy for repluser
 # Remove "s3:GetBucketObjectLockConfiguration" if object locking is not needed
 # Remove "s3:ReplicateDelete" if delete marker replication is not required
-cat > replpolicy.json <<EOF
+cat > ./policy/replpolicy.json <<EOF
 {
  "Version": "2012-10-17",
  "Statement": [
@@ -116,8 +119,8 @@ cat > replpolicy.json <<EOF
 }
 EOF
 
-mc admin policy add tdest replpolicy ./replpolicy.json
-cat ./replpolicy.json
+mc admin policy add tdest replpolicy ./policy/replpolicy.json
+cat ./policy/replpolicy.json
 
 #assign this replication policy to repluser
 mc admin policy set tdest replpolicy user=repluser
@@ -126,12 +129,18 @@ mc alias remove asource
 # mc alias remove rdest
 echo " mc alias set asource ${SRC_EP} repladmin repladmin123"
 mc alias set asource ${SRC_EP} repladmin repladmin123
-# echo "mc alias set rdest ${DST_EP} repluser repluser123"
-# mc alias set rdest ${DST_EP} repluser repluser123
+echo "mc alias set rdest ${DST_EP} repluser repluser123"
+mc alias set rdest ${DST_EP} repluser repluser123
 echo "using admin credentials needed on source for setting up targets with alias asource"
 # define remote target for replication from asource/bucket -> rdest/bucket
-echo "mc admin bucket remote add asource/bucket http://repluser:repluser123@${dstIP}:${DST_PORT}/bucket --service replication --region us-east-1 --json"
-REPL_ARN=$(mc admin bucket remote add asource/bucket http://repluser:repluser123@${dstIP}:${DST_PORT}/bucket --service replication --region us-east-1 --json | jq .RemoteARN |  sed -e 's/^"//' -e 's/"$//')
+echo "showing current state of admin target"
+REPL_ARN=$(mc admin bucket remote ls asource/bucket --json | jq .RemoteARN |  sed -e 's/^"//' -e 's/"$//' )
+if [ "$REPL_ARN" != "" ]; then
+    mc replicate rm --all --force tsource/bucket
+    mc admin bucket remote rm tsource/bucket --arn ${REPL_ARN}
+    echo "removed old arn"
+fi
+REPL_ARN=$(mc admin bucket remote add asource/bucket http://repluser:repluser123@${dstIP}:${DST_PORT}/bucket --service replication --region us-east-1 --json | jq .RemoteARN |  sed -e 's/^"//' -e 's/"$//' )
 
 echo "Now, use this ARN ${REPL_ARN} to add replication rules using 'mc replicate add' command"
 echo "mc replicate add tsource/bucket --priority 1 --remote-bucket bucket --arn ${REPL_ARN} --replicate delete-marker,delete"
