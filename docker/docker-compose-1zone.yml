@@ -15,6 +15,7 @@ services:
   environment:
    MINIO_ACCESS_KEY: minio
    MINIO_SECRET_KEY: minio123
+   MINIO_REGION: us-west-1
   command: server http://minioz1{1...4}/data
  minioz12:
   container_name: minioz12
@@ -27,6 +28,7 @@ services:
   environment:
    MINIO_ACCESS_KEY: minio
    MINIO_SECRET_KEY: minio123
+   MINIO_REGION: us-west-1
   command: server http://minioz1{1...4}/data
  minioz13:
   container_name: minioz13
@@ -38,6 +40,7 @@ services:
   environment:
    MINIO_ACCESS_KEY: minio
    MINIO_SECRET_KEY: minio123
+   MINIO_REGION: us-west-1
   command: server http://minioz1{1...4}/data
   restart: on-failure
  minioz14:
@@ -50,5 +53,6 @@ services:
   environment:
    MINIO_ACCESS_KEY: minio
    MINIO_SECRET_KEY: minio123
+   MINIO_REGION: us-west-1
   command: server http://minioz1{1...4}/data
   restart: on-failure

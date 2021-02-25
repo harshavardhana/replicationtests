@@ -11,6 +11,9 @@ declare FILE_0_B_MD5SUM
 declare FILE_1_MB_MD5SUM
 declare FILE_129_MB_MD5SUM
 
+SOURCE_ALIAS="tsource"
+DST_ALIAS="tdest"
+
 function get_md5sum()
 {
     filename="$1"
@@ -46,8 +49,6 @@ function check_md5sum()
 function test_replicate_content()
 {
     mc_cmd=(mc)
-    SOURCE_ALIAS="tsource"
-    DST_ALIAS="tdest"
     BUCKET_NAME="bucket"
     object_name="repl-$RANDOM"
 
@@ -84,6 +85,21 @@ function test_replicate_content()
     mc cat "${SOURCE_ALIAS}/${BUCKET_NAME}/${object_name}" >"$DOWNLOAD_DIR/${object_name}.downloaded.src"
     mc cat "${DST_ALIAS}/${BUCKET_NAME}/${object_name}" >"$DOWNLOAD_DIR/${object_name}.downloaded.dst"
     cmp --silent "$DOWNLOAD_DIR/${object_name}.downloaded.src" "$DOWNLOAD_DIR/${object_name}.downloaded.dst" || echo "replica and source data content differs"
+    #clean up if compares ok
+    if [ "$?" -eq 0 ]; then
+        rm "$DOWNLOAD_DIR/${object_name}.downloaded.src"
+        rm "$DOWNLOAD_DIR/${object_name}.downloaded.dst"
+    fi
+    #compare listing
+    compare_listing ${BUCKET_NAME}/${object_name}
+}
+
+function compare_listing()
+{
+    diff -bB <(mc ls ${SOURCE_ALIAS}/${1} --json --versions --r | jq -r .key,.etag,.versionId ) <(mc ls ${DST_ALIAS}/${1} --json --versions --recursive | jq -r .key,.etag,.versionId ) >/dev/null 2>&1
+    if [ "$?" -ne 0 ]; then
+        echo "listing differs for ${1} between ${SOURCE_ALIAS} and ${DST_ALIAS}"
+    fi
 }
 function run_test()
 {
@@ -91,7 +107,6 @@ function run_test()
     test_replicate_content ${FILE_1_MB}
     # test multi part upload
     test_replicate_content ${FILE_129_MB}
-
 }
  
 function __init__()

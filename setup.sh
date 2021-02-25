@@ -16,11 +16,12 @@ echo "dstIP:{$dstIP}"
 srcIP=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}'  minioz21)
 SRC_PORT="9000"
 DST_PORT="9000"
+SRC_REGION="us-west-2"
+DST_REGION="us-west-1"
 SRC_EP="http://${srcIP}:${SRC_PORT}"
 DST_EP="http://${dstIP}:${DST_PORT}"
-echo "srcIP:${srcIP}"
-echo "http://${SRC_EP}"
-echo "http://${DST_EP}"
+echo "${SRC_EP}"
+echo "${DST_EP}"
 mc alias remove tsource
 mc alias remove tdest
 echo " mc alias set tsource ${SRC_EP} minio minio123"
@@ -140,7 +141,7 @@ if [ "$REPL_ARN" != "" ]; then
     mc admin bucket remote rm tsource/bucket --arn ${REPL_ARN}
     echo "removed old arn"
 fi
-REPL_ARN=$(mc admin bucket remote add asource/bucket http://repluser:repluser123@${dstIP}:${DST_PORT}/bucket --service replication --region us-east-1 --json | jq .RemoteARN |  sed -e 's/^"//' -e 's/"$//' )
+REPL_ARN=$(mc admin bucket remote add asource/bucket http://repluser:repluser123@${dstIP}:${DST_PORT}/bucket --service replication --region ${DST_REGION} --json | jq .RemoteARN |  sed -e 's/^"//' -e 's/"$//' )
 
 echo "Now, use this ARN ${REPL_ARN} to add replication rules using 'mc replicate add' command"
 echo "mc replicate add tsource/bucket --priority 1 --remote-bucket bucket --arn ${REPL_ARN} --replicate delete-marker,delete"
