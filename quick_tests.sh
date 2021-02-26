@@ -201,10 +201,27 @@ function test_replicate_copyobject()
     fi
 }
 
+## Test successful replication of content and deletemarkers for a small upload
+function test_replicate_delete_marker()
+{
+    mc_cmd=(mc)
+    BUCKET_NAME="bucket"
+    object_name="repl-$RANDOM"
+
+    mc cp "${1}" "${SOURCE_ALIAS}/${BUCKET_NAME}/${object_name}"
+    mc cp "${1}" "${SOURCE_ALIAS}/${BUCKET_NAME}/${object_name}"
+    mc rm "${SOURCE_ALIAS}/${BUCKET_NAME}/${object_name}"
+    mc cp "${1}" "${SOURCE_ALIAS}/${BUCKET_NAME}/${object_name}"
+    mc rm "${SOURCE_ALIAS}/${BUCKET_NAME}/${object_name}"
+
+        #compare listing
+    compare_listing ${BUCKET_NAME}/${object_name}
+}
+
 
 function compare_listing()
 {
-    diff -bB <(mc ls ${SOURCE_ALIAS}/${1} --json --versions --r | jq -r .key,.etag,.versionId ) <(mc ls ${DST_ALIAS}/${1} --json --versions --recursive | jq -r .key,.etag,.versionId ) >/dev/null 2>&1
+    diff -bB <(mc ls ${SOURCE_ALIAS}/${1} --json --versions --r | jq -r .key,.etag,.versionId ) <(mc ls ${DST_ALIAS}/${1} --json --versions --recursive | jq -r .key,.etag,.versionId )  >/dev/null 2>&1
     if [ "$?" -ne 0 ]; then
         echo "listing differs for ${1} between ${SOURCE_ALIAS} and ${DST_ALIAS}"
     fi
@@ -218,8 +235,8 @@ function run_test()
     # test replication of tags set via PutObjectTagging API
     #test_replicate_tags ${FILE_0_B}
     # test replication of metadata updates via CopyObject API
-    test_replicate_copyobject ${FILE_0_B}
-    
+    #test_replicate_copyobject ${FILE_0_B}
+    test_replicate_delete_marker ${FILE_0_B}
 }
  
 function __init__()
