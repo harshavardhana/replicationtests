@@ -145,6 +145,62 @@ function test_replicate_tags()
     fi
 }
 
+## Test successful replication of metadata update on a version via CopyObject gets reflected on the target.
+## update of metadata on a version via CopyObject API will result in the creation of a new version
+## as per S3 spec
+function test_replicate_copyobject()
+{
+    mc_cmd=(mc)
+    BUCKET_NAME="bucket"
+    object_name="repl-$RANDOM"
+
+    mc cp --attr key1=val1\;key2=val2 "${1}" "${SOURCE_ALIAS}/${BUCKET_NAME}/${object_name}" >/dev/null 2>&1
+     if [ "$?" -ne 0 ];then
+       echo "cp failed on ${SOURCE_ALIAS}/${BUCKET_NAME}/${object_name}"
+       return
+    fi
+    versionID=$(mc ls ${SOURCE_ALIAS}/${BUCKET_NAME}/${object_name} --json --versions | jq -r .versionId )
+    if [ "${versionID}" == "" ]; then
+        echo "ls failed on ${SOURCE_ALIAS}/${BUCKET_NAME}/${object_name}"
+        return
+    fi
+    # change metadata on the object version created above. This would end up creating a new version of object with updated 
+    # metadata per S3 spec
+    mc cp --version-id ${versionID} --json --attr "Cif=Value1;Documenttype=value2" ${SOURCE_ALIAS}/${BUCKET_NAME}/${object_name} ${SOURCE_ALIAS}/${BUCKET_NAME}/${object_name} >/dev/null 2>&1
+    if [ "$?" -ne 0 ];then
+       echo "cp with metadata replacement failed on ${SOURCE_ALIAS}/${BUCKET_NAME}/${object_name} {${versionID}}"
+       return
+    fi
+
+    # compare metadata on newly created version after Copy operation
+    newVersionID=$(mc ls ${SOURCE_ALIAS}/${BUCKET_NAME}/${object_name} --json --versions| jq .versionId | jq --raw-input --slurp 'split("\n")' | jq '[.[]][0]' |  tr -d '\\"')
+    # Get source metadata and filter out metadata that is not useful to compare
+    srcMeta=$(mc stat "${SOURCE_ALIAS}/${BUCKET_NAME}/${object_name}" --json --vid ${newVersionID} | jq 'del(.status,.expiration,.expires,.type)' --sort-keys)
+    SRC_REPL_STATUS=$(echo ${srcMeta} | jq -r '.replicationStatus')
+    if [ "$SRC_REPL_STATUS" != "COMPLETED" ]; then
+        echo "${SOURCE_ALIAS}/${BUCKET_NAME}/${object_name} unexpected replication status :${SRC_REPL_STATUS}"
+    else
+        # remove replicationStatus from metadata
+        srcMeta=$( echo $srcMeta | jq  'del(.replicationStatus)')
+    fi
+
+    # Get dest metadata for matching version and filter out metadata that is not useful to compare
+    dstMeta=$(mc stat "${DST_ALIAS}/${BUCKET_NAME}/${object_name}" --vid ${newVersionID} --json | jq 'del(.status,.expiration,.expires,.type)' --sort-keys)
+    DST_REPL_STATUS=$(echo "$dstMeta" | jq -r '.replicationStatus')
+    if [ "$DST_REPL_STATUS" != "REPLICA" ]; then
+        echo "${DST_ALIAS}/${BUCKET_NAME}/${object_name} unexpected replication status :${DST_REPL_STATUS}"
+    else
+        # remove replicationStatus from metdata
+        dstMeta=$( echo $dstMeta | jq  'del(.replicationStatus)')
+    fi
+
+    diff -bB <(echo ${srcMeta}) <(echo ${dstMeta})
+    rc="$?"
+    if [ "$rc" -ne 0 ]; then
+        echo "Metadata difference for ${BUCKET_NAME}/${object_name}, ${srcMeta}, ${dstMeta}"
+    fi
+}
+
 
 function compare_listing()
 {
@@ -160,8 +216,9 @@ function run_test()
     # test multi part upload
     #test_replicate_content ${FILE_129_MB}
     # test replication of tags set via PutObjectTagging API
-    test_replicate_tags ${FILE_0_B}
-    #test_replicate_copyobject ${FILE_0_B}
+    #test_replicate_tags ${FILE_0_B}
+    # test replication of metadata updates via CopyObject API
+    test_replicate_copyobject ${FILE_0_B}
     
 }
  
