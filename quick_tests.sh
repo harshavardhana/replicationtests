@@ -218,6 +218,25 @@ function test_replicate_delete_marker()
     compare_listing ${BUCKET_NAME}/${object_name}
 }
 
+function test_replicate_version_delete()
+{
+    mc_cmd=(mc)
+    BUCKET_NAME="bucket"
+    object_name="repl-$RANDOM"
+
+    mc cp "${1}" "${SOURCE_ALIAS}/${BUCKET_NAME}/${object_name}"
+    mc rm "${SOURCE_ALIAS}/${BUCKET_NAME}/${object_name}"
+    #compare listing after setting delete marker
+    compare_listing ${BUCKET_NAME}/${object_name}
+    vid=$(mc ls ${SOURCE_ALIAS}/${BUCKET_NAME}/${object_name} --json --versions| jq .versionId | jq --raw-input --slurp 'split("\n")' | jq '[.[]][0]' |  tr -d '\\"')
+    mc rm "${SOURCE_ALIAS}/${BUCKET_NAME}/${object_name}" --vid "${vid}"
+    #compare listing after permanent delete of  delete marker
+    compare_listing ${BUCKET_NAME}/${object_name}
+    vid=$(mc ls ${SOURCE_ALIAS}/${BUCKET_NAME}/${object_name} --json --versions| jq .versionId | jq --raw-input --slurp 'split("\n")' | jq '[.[]][0]' |  tr -d '\\"')
+    mc rm "${SOURCE_ALIAS}/${BUCKET_NAME}/${object_name}" --vid "${vid}"
+    #compare listing after permanent delete of object version
+    compare_listing ${BUCKET_NAME}/${object_name}
+}
 
 function compare_listing()
 {
@@ -236,7 +255,11 @@ function run_test()
     #test_replicate_tags ${FILE_0_B}
     # test replication of metadata updates via CopyObject API
     #test_replicate_copyobject ${FILE_0_B}
-    test_replicate_delete_marker ${FILE_0_B}
+    # test replication of delete marker
+    #test_replicate_delete_marker ${FILE_0_B}
+    # test replication of permanent delete
+    test_replicate_version_delete ${FILE_0_B}
+
 }
  
 function __init__()
