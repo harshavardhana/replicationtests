@@ -32,6 +32,8 @@ mc alias set tdest ${DST_EP} minio minio123
 # # create buckets with versioning enabled
 mc mb tsource/bucket --l 
 mc mb tdest/bucket --l
+mc mb tsource/olockbucket --l 
+mc mb tdest/olockbucket --l
 
 #### Create a replication admin on tsource alias
 # create a replication admin user : repladmin
@@ -60,7 +62,9 @@ cat > ./policy/repladmin-policy-tsource.json <<EOF
        "s3:GetBucketVersioning"
       ],
       "Resource": [
-       "arn:aws:s3:::bucket"
+       "arn:aws:s3:::bucket",
+       "arn:aws:s3:::olockbucket"
+
       ]
      }
     ]
@@ -95,7 +99,8 @@ cat > ./policy/replpolicy.json <<EOF
     "s3:GetBucketObjectLockConfiguration"
    ],
    "Resource": [
-    "arn:aws:s3:::bucket"
+    "arn:aws:s3:::bucket",
+    "arn:aws:s3:::olockbucket"
    ]
   },
   {
@@ -113,7 +118,20 @@ cat > ./policy/replpolicy.json <<EOF
     "s3:ReplicateDelete"
    ],
    "Resource": [
-    "arn:aws:s3:::bucket/*"
+    "arn:aws:s3:::bucket/*",
+    "arn:aws:s3:::olockbucket/*"
+   ]
+  },
+  {
+   "Effect": "Allow",
+   "Action": [
+    "s3:GetObjectRetention",
+    "s3:PutObjectRetention",
+    "s3:GetObjectLegalHold",
+    "s3:PutObjectLegalHold"
+   ],
+   "Resource": [
+    "arn:aws:s3:::olockbucket/*"
    ]
   }
  ]
@@ -147,3 +165,16 @@ echo "Now, use this ARN ${REPL_ARN} to add replication rules using 'mc replicate
 echo "mc replicate add tsource/bucket --priority 1 --remote-bucket bucket --arn ${REPL_ARN} --replicate delete-marker,delete"
 # use arn returned by above command to create a replication policy on the tsource/bucket with `mc replicate add`
 mc replicate add tsource/bucket --priority 1 --remote-bucket bucket --arn ${REPL_ARN} --replicate delete-marker,delete
+
+REPL_ARN=$(mc admin bucket remote ls asource/olockbucket --json | jq .RemoteARN |  sed -e 's/^"//' -e 's/"$//' )
+if [ "$REPL_ARN" != "" ]; then
+    mc replicate rm --all --force tsource/olockbucket
+    mc admin bucket remote rm tsource/olockbucket --arn ${REPL_ARN}
+    echo "removed old arn"
+fi
+REPL_ARN=$(mc admin bucket remote add asource/olockbucket http://repluser:repluser123@${dstIP}:${DST_PORT}/olockbucket --service replication --region ${DST_REGION} --json | jq .RemoteARN |  sed -e 's/^"//' -e 's/"$//' )
+
+echo "Now, use this ARN ${REPL_ARN} to add replication rules using 'mc replicate add' command"
+echo "mc replicate add tsource/olockbucket --priority 1 --remote-bucket olockbucket --arn ${REPL_ARN} --replicate delete-marker,delete"
+# use arn returned by above command to create a replication policy on the tsource/bucket with `mc replicate add`
+mc replicate add tsource/olockbucket --priority 1 --remote-bucket olockbucket --arn ${REPL_ARN} --replicate delete-marker,delete

@@ -5,7 +5,7 @@ version: '2'
 services:
  minioz21:
   container_name: minioz21
-  image: kp/minio:0223d1
+  image: kp/minio:0303d1
   restart: always
   volumes:
    - /home/kp/repltest/2zones/data1:/data
@@ -18,7 +18,7 @@ services:
   command: server http://minioz2{1...4}/data http://minioz2{5...8}/data
  minioz22:
   container_name: minioz22
-  image: kp/minio:0223d1
+  image: kp/minio:0303d1
   restart: always
   volumes:
    - /home/kp/repltest/2zones/data2:/data
@@ -31,7 +31,7 @@ services:
   command: server http://minioz2{1...4}/data http://minioz2{5...8}/data
  minioz23:
   container_name: minioz23
-  image: kp/minio:0223d1
+  image: kp/minio:0303d1
   volumes:
    - /home/kp/repltest/2zones/data3:/data
   ports:
@@ -44,7 +44,7 @@ services:
   restart: on-failure
  minio4:
   container_name: minioz24
-  image: kp/minio:0223d1
+  image: kp/minio:0303d1
   volumes:
    - /home/kp/repltest/2zones/data4:/data
   ports:
@@ -57,7 +57,7 @@ services:
   restart: on-failure
  minioz25:
   container_name: minioz25
-  image: kp/minio:0223d1
+  image: kp/minio:0303d1
   volumes:
    - /home/kp/repltest/2zones/data5:/data
   ports:
@@ -70,7 +70,7 @@ services:
   restart: on-failure
  minioz26:
   container_name: minioz26
-  image: kp/minio:0223d1
+  image: kp/minio:0303d1
   volumes:
    - /home/kp/repltest/2zones/data6:/data
   ports:
@@ -83,7 +83,7 @@ services:
   restart: on-failure
  minioz27:
   container_name: minioz27
-  image: kp/minio:0223d1
+  image: kp/minio:0303d1
   volumes:
    - /home/kp/repltest/2zones/data7:/data
   ports:
@@ -96,7 +96,7 @@ services:
   restart: on-failure
  minioz28:
   container_name: minioz28
-  image: kp/minio:0223d1
+  image: kp/minio:0303d1
   volumes:
    - /home/kp/repltest/2zones/data8:/data
   ports:
