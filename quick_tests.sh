@@ -335,6 +335,10 @@ function test_replication_legalhold_metadata()
     BUCKET_NAME="olockbucket"
     object_name="repl-$RANDOM"
     mc retention set --default compliance 30d  "${SOURCE_ALIAS}/${BUCKET_NAME}"
+    if [ "$?" -ne 0 ];then
+       echo "retention could not be set on ${SOURCE_ALIAS}/${BUCKET_NAME}/${object_name}"
+       return
+    fi
     mc cp --attr "key1=val1\;key2=val2" "${1}" "${SOURCE_ALIAS}/${BUCKET_NAME}/${object_name}" >/dev/null 2>&1
      if [ "$?" -ne 0 ];then
        echo "cp failed on ${SOURCE_ALIAS}/${BUCKET_NAME}/${object_name}"
@@ -485,8 +489,6 @@ function __init__()
         echo "unable to get md5sum of $FILE_129_MB"
         exit 1
     fi
-    # assert_success "$start_time" "${FUNCNAME[0]}" mc_cmd alias set "${SERVER_ALIAS}" "$ENDPOINT" "$ACCESS_KEY" "$SECRET_KEY"
-    # assert_success "$start_time" "${FUNCNAME[0]}" mc_cmd alias set "${SERVER_ALIAS_TLS}" "$ENDPOINT" "$ACCESS_KEY" "$SECRET_KEY"
 
     set +e
 }

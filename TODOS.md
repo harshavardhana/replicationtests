@@ -1,7 +1,22 @@
 ## Replication sanity tests
-- [ ] Setup 2-zone docker-compose source side - with image,pvcs
-- [ ] Setup 1 zone docker-compose dest side
-- [ ] Setup mc docker compose
-- [ ] Create setup-script.sh to create aliases, replication config, targets
-- [ ] Test1 - replicate,compare metadata, replication status; file diff
-- [ ] Test2 -  
+- [x] Setup 2-zone docker-compose source side
+- [x] Setup 1 zone docker-compose dest side
+- [x] Create setup-script.sh to create aliases, replication config, targets
+- [x] Test1 - replicate,compare metadata, replication status; file diff
+- [x] Test2 - multipart replication test
+- [x] Test3 - metadata version update replication test
+- [x] Test4 - test if tag replication occurs
+- [x] Test5 - test if legalhold replication works
+- [x] Test6 - test if object retention metadata replicates
+- [x] Test7 - test if delete marker replicates
+- [x] Test8 - test if permanent delete of version replicates
+
+- [x] Setup bi-directional replication
+- [ ] Test both ends of a bi-directional setup for symmetry of version stack
+- [ ] Test cluster 2 down after object uploaded to cluster1 - catch up of PUT
+- [ ] Test cluster 2 down after object uploaded to cluster1 - catch up of Delete markers
+- [ ] Test cluster 2 down after object uploaded to cluster1 - catch up of versioned deletes
+- [ ] Test cluster 2 down after object uploaded to cluster1 - catch up of metadata updates
+- [ ] Test cluster 2 down after object uploaded to cluster1 - catch up of tagging updates
+- [ ] Test cluster 2 down after object uploaded to cluster1 - catch up of retention metadata updates
+- [ ] Test cluster 2 down after object uploaded to cluster1 - catch up of legal hold updates

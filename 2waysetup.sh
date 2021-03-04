@@ -64,7 +64,7 @@ cat > ./policy/replpolicy.json <<EOF
     "s3:GetBucketLocation",
     "s3:GetBucketVersioning",
     "s3:GetBucketObjectLockConfiguration"
-   ],
+    ],
    "Resource": [
     "arn:aws:s3:::bucket",
     "arn:aws:s3:::olockbucket"
