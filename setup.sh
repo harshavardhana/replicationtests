@@ -1,7 +1,7 @@
 #!/bin/bash
 # remove old source and dest if any
-sudo rm --recursive --force "/home/kp/repltest/1zone*"
-sudo rm --recursive --force "/home/kp/repltest/2zone*"
+sudo rm --recursive --force "${HOME}/repltest/1zone*"
+sudo rm --recursive --force "${HOME}/repltest/2zone*"
 
 docker-compose -f docker/docker-compose-2zones.yml down --remove-orphans
 docker-compose -f docker/docker-compose-1zone.yml down --remove-orphans
